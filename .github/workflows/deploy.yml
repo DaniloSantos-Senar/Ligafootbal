@@ -1,0 +1,59 @@
+name: CD - Deploy Automatizado (SSH + Docker Compose)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy em Produção via SSH
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Executar Deploy via SSH no Servidor
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 15m
+          script: |
+            set -e
+
+            echo "🚀 Iniciando deploy do projeto Supermundial..."
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "📥 Atualizando código-fonte do repositório..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🐳 Atualizando e reconstruindo containers Docker..."
+            docker compose up -d --build --remove-orphans
+
+            echo "📦 Instalando dependências de produção do Composer..."
+            docker compose exec -T app composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "🎨 Compilando assets de produção (Vite)..."
+            docker compose run --rm node sh -c "npm ci && npm run build"
+
+            echo "🗄️ Executando migrações do banco de dados..."
+            docker compose exec -T app php artisan migrate --force
+
+            echo "⚡ Otimizando caches do Laravel..."
+            docker compose exec -T app php artisan optimize:clear
+            docker compose exec -T app php artisan config:cache
+            docker compose exec -T app php artisan route:cache
+            docker compose exec -T app php artisan view:cache
+            docker compose exec -T app php artisan queue:restart
+
+            echo "✅ Deploy concluído com sucesso!"
