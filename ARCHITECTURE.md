@@ -4,38 +4,38 @@ Este documento detalha a arquitetura, as decisões técnicas e a estrutura de in
 
 ## Visão Geral
 
-O sistema é uma aplicação web construída sobre o framework **Laravel 10** e rodando em **PHP 8.1**. A infraestrutura de desenvolvimento é totalmente baseada em contêineres Docker, gerenciados pelo `docker-compose`.
+O sistema é uma aplicação web construída sobre o framework **Laravel 12** e rodando em **PHP 8.4**. A infraestrutura de desenvolvimento é totalmente baseada em contêineres Docker, gerenciados pelo `docker-compose`.
 
 ## Estrutura de Contêineres (Docker)
 
 O ambiente de desenvolvimento (e potencialmente de produção) utiliza os seguintes serviços definidos no `docker-compose.yml`:
 
 1. **app (Laravel / PHP-FPM)**
-   - **Imagem/Build**: Usa um `Dockerfile` customizado localizado na raiz do projeto.
+   - **Imagem/Build**: Usa um `Dockerfile` customizado localizado na raiz do projeto (`php:8.4-fpm`).
    - **Responsabilidade**: Executar o código PHP da aplicação.
    - **Configuração Customizada**: Utiliza um arquivo `local.ini` em `./docker/php/local.ini` para configurações específicas do PHP.
    - **Rede**: Conecta-se ao `mysql` e `redis`.
 
 2. **nginx (Servidor Web)**
-   - **Imagem**: `nginx:alpine`
+   - **Imagem**: `nginx:stable-alpine`
    - **Responsabilidade**: Servir arquivos estáticos (public) e fazer o proxy reverso das requisições PHP para o contêiner `app`.
    - **Porta Mapeada**: `8000` (Localhost) -> `80` (Contêiner).
    - **Configuração Customizada**: Utiliza o arquivo `./docker/nginx/nginx.conf`.
 
 3. **mysql (Banco de Dados Relacional)**
-   - **Imagem**: `mysql:8.0`
+   - **Imagem**: `mysql:8.4`
    - **Responsabilidade**: Armazenar os dados persistentes da aplicação.
    - **Porta Mapeada**: `3306`
    - **Volume**: Utiliza um volume nomeado `mysql_data` para garantir que os dados não se percam quando o contêiner for desligado.
    - **Configuração Customizada**: `./docker/mysql/my.cnf`.
 
 4. **redis (Cache, Sessão e Filas)**
-   - **Imagem**: `redis:alpine`
+   - **Imagem**: `redis:7-alpine`
    - **Responsabilidade**: Atuar como banco de dados in-memory para armazenamento rápido de cache, sessões de usuário e gerenciamento de filas (queues) do Laravel.
    - **Porta Mapeada**: `6379`
 
 5. **node (Frontend Tooling / Vite)**
-   - **Imagem**: `node:18-alpine`
+   - **Imagem**: `node:22-alpine`
    - **Responsabilidade**: Instalar dependências JavaScript (`npm install`) e executar o servidor de desenvolvimento do Vite (`npm run dev`) para Hot Module Replacement (HMR).
 
 ## Estrutura de Diretórios e Código

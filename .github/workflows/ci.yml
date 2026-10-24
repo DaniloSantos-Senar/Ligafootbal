@@ -8,12 +8,12 @@ on:
 
 jobs:
   tests:
-    name: Testes, Lint e Build (PHP 8.3)
+    name: Testes, Lint e Build (PHP 8.4)
     runs-on: ubuntu-latest
 
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8.4
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: supermundial_test
@@ -28,7 +28,7 @@ jobs:
           --health-retries=5
 
       redis:
-        image: redis:alpine
+        image: redis:7-alpine
         ports:
           - 6379:6379
         options: >-
@@ -41,17 +41,17 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.3
+      - name: Configurar PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, gd, redis
           coverage: none
 
-      - name: Configurar Node.js 18
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Obter diretório de cache do Composer
